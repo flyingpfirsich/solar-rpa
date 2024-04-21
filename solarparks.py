@@ -1,6 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import weatherforecast
+import electricity
 
 class Solarpark:
     def __init__(self, max_leistung_kw, speicher_kapazität_kwh, standort_koordinaten, bankroll=0, fläche=100):
@@ -48,6 +49,6 @@ class Solarpark:
         
         return produzierte_energie
 
-    def berechne_strom_buchwert(self, gespeicherte_energie_kwh):
-        strompreis = get_strompreis()
-        return strompreis * gespeicherte_energie_kwh
+    def berechne_strom_buchwert(self):
+        strompreis = electricity.fetch_energy_price()
+        return (strompreis * self.gespeicherte_energie_kwh)

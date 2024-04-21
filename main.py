@@ -9,7 +9,8 @@ def main():
         fläche=100
     )
     
-    solarpark_neuenhagen.berechne_maxAuslastung()
-    
+    #solarpark_neuenhagen.berechne_maxAuslastung()
+    print(solarpark_neuenhagen.berechne_strom_buchwert())
+
 if __name__ == "__main__":
     main()
