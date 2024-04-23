@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from tkinter import font
+from PIL import Image, ImageTk
 import threading
 import logic
 import time
@@ -9,10 +10,25 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import MaxNLocator
 
+solarpark = {
+        "name": "Solarpark Neuenhagen",
+        "speicher_kapazität_kwh": 22000,
+        "standort_koordinaten": (51.178882, -1.826215),
+        "gespeicherte_energie_kwh": 0,
+        "bankroll": 0,
+        "Modulenennleistung_kW": 0.32,
+        "Modulgröße_m2": 1.7,
+        "Modulanzahl": 23500,
+        "Modulwirkungsgrad": 0.22,
+        "max_leistung_kw": 0.32 * 23500, 
+        "status":False,
+        "vertrieb":False
+    }
+
 # Initialisieren des Hauptfensters
 ctk.set_appearance_mode("Dark")  # Alternativ "Dark" oder "Light"
 root = ctk.CTk()  # Verwendung von CTk anstelle von Tk
-root.title("Solarpark Dashboard")
+root.title(solarpark["name"])
 root.geometry("1080x720")  # Setzt die Größe des Fensters
 root.resizable(False, False)  # Verhindern, dass die Fenstergröße geändert wird
 
@@ -21,17 +37,17 @@ background_frame = ctk.CTkFrame(master=root, width=1080, height=720, corner_radi
 background_frame.place(x=0, y=0)
 background_frame.configure(fg_color="#666666")  # Setzt die Vordergrundfarbe, die hier als Hintergrund dient
 
-tab_frame = ctk.CTkFrame(master=root, width=205, height=720, corner_radius=0)
+tab_frame = ctk.CTkFrame(master=root, width=210, height=720, corner_radius=0)
 tab_frame.place(x=0, y=0)
 tab_frame.configure(fg_color="#3F3F3F")
 
 custom_font = font.Font(family="Inter", size=14, weight="bold")
 
 # Label (headline_frame) erstellen mit benutzerdefinierter Schriftart
-headline_label = ctk.CTkLabel(master=root, text="Solarpark \n Dashboard",
+headline_label = ctk.CTkLabel(master=root, text="Solarpark \n \t📊Neuenhagen",
                                text_color="#FFFFFF", fg_color="#3F3F3F",
                                font=("Inter", 24, "bold"),)
-headline_label.place(x=7, y=5)
+headline_label.place(x=-90, y=5)
 
 #DATUM
 datum_label = ctk.CTkLabel(master=root, text="Datum:",
@@ -78,6 +94,17 @@ vvertrieb_label = ctk.CTkLabel(master=root, text="inaktiv",
                                font=("Inter", 18, "bold"))
 vvertrieb_label.place(x=92, y=445)
 
+#PREIS
+ppreis_label = ctk.CTkLabel(master=root, text="Preis:",
+                               text_color="#FFFFFF", bg_color="#3F3F3F",fg_color="#3F3F3F",
+                               font=("Inter", 18, "bold"))
+ppreis_label.place(x=7, y=466)
+
+vpreis_label = ctk.CTkLabel(master=root, text="0",
+                               text_color="#FFFFFF", bg_color="#3F3F3F",fg_color="#3F3F3F",
+                               font=("Inter", 18, "bold"))
+vpreis_label.place(x=92, y=466)
+
 #UMSATZ
 umsatz_frame = ctk.CTkFrame(master=root, width=238, height=118, corner_radius=10)
 umsatz_frame.place(x=228, y=63)
@@ -112,7 +139,7 @@ sonne_frame.configure(bg_color="#666666", fg_color="#3F3F3F")
 sonne_label = ctk.CTkLabel(master=root, text="SONNE",
                                text_color="#FFFFFF", bg_color="#3F3F3F",fg_color="#3F3F3F",
                                font=("Inter", 18, "bold"),)
-sonne_label.place(x=636, y=63)
+sonne_label.place(x=628, y=63)
 sonnepro_label = ctk.CTkLabel(master=root, text="50%",
                                text_color="#FF9417", bg_color="#3F3F3F",fg_color="#3F3F3F",
                                font=("Inter", 34, "bold"))
@@ -175,20 +202,6 @@ preis_label.place(x=837, y=384)
 
 #####
 
-solarpark = {
-        "name": "Solarpark Neuenhagen",
-        "speicher_kapazität_kwh": 22000,
-        "standort_koordinaten": (51.178882, -1.826215),
-        "gespeicherte_energie_kwh": 0,
-        "bankroll": 0,
-        "Modulenennleistung_kW": 0.32,
-        "Modulgröße_m2": 1.7,
-        "Modulanzahl": 23500,
-        "Modulwirkungsgrad": 0.22,
-        "max_leistung_kw": 0.32 * 23500, 
-        "status":False,
-        "vertrieb":False
-    }
 
 akkut_label = ctk.CTkLabel(master=root, text="Akku:",
                                text_color="#FFFFFF", bg_color="#3F3F3F",fg_color="#3F3F3F",
@@ -199,6 +212,11 @@ vakkut_label = ctk.CTkLabel(master=root, text=f"{int(solarpark['gespeicherte_ene
                                text_color="#FFFFFF", bg_color="#3F3F3F",fg_color="#3F3F3F",
                                font=("Inter", 18, "bold"))
 vakkut_label.place(x=92, y=195)
+
+vakkut2_label = ctk.CTkLabel(master=root, text=f"/{int(solarpark['speicher_kapazität_kwh']):.0f}KWh",
+                               text_color="#FFFFFF", bg_color="#3F3F3F",fg_color="#3F3F3F",
+                               font=("Inter", 18, "bold"))
+vakkut2_label.place(x=92, y=220)
 
 def update_dashboard():
     app_data = {
@@ -218,13 +236,19 @@ def update_dashboard():
         }
     
     while True:
-        if solarpark['status']:
-            solar_production = logic.get_solar_production(weather_data, solarpark)
-        else:
-            solar_production = 0
 
         price_data = logic.get_price_data(solarpark)
         weather_data = logic.get_weather_data(solarpark)
+
+
+        if solarpark['status']:
+            solar_production, _,_ = logic.get_solar_production(weather_data, solarpark)
+        else:
+            solar_production = 0
+
+        _, cloud_cover, emoji = logic.get_solar_production(weather_data, solarpark)
+
+        
           # Include solarpark here
 
         if solarpark["gespeicherte_energie_kwh"]+solar_production<=solarpark['speicher_kapazität_kwh']:
@@ -261,8 +285,10 @@ def update_dashboard():
 
         gesamtumsatz_label.configure(text=f"{app_data['bankroll']:.2f}€")
         temperatur_label.configure(text=f"{int(app_data['temperature'])}°C")
-        sonnepro_label.configure(text="55%")
+        sonne_label.configure(text=f"SONNE {emoji}")
+        sonnepro_label.configure(text=f"{cloud_cover}%")
         gesamtleistung_label.configure(text=f"{app_data['current_power'][-1]:.1f} KW")
+        vpreis_label.configure(text=f"{current_price}€")
         
         #Akku Plot
         akku_fig = Figure(figsize=(2.6, 2.6), facecolor="#3F3F3F")
@@ -321,21 +347,43 @@ def update_dashboard():
         eff_canvas.draw()
         eff_canvas.get_tk_widget().place(x=493, y=246)
 
+
+        
+
+
         #MARKT
+        
         markt_fig = Figure(figsize=(2.6, 2.6), facecolor="#3F3F3F")
         markt_fig.text(x=0.08,y=0.95, s="€", color='#FFFFFF', fontsize=14,transform=markt_fig.transFigure, ha='center', va='center')
         markt_ax = markt_fig.add_subplot()
+        line, = markt_ax.plot(range(len(price_data['price'])), price_data['price'], color='#FF9417', picker=5)
+        hover_text = markt_ax.text(0, 0, "", va="bottom", ha="right", color="#FF9417", fontsize=11, visible=False)
+        def on_hover(event):
+            if line.contains(event)[0]:
+                # Datenpunktindex und Wert finden
+                ind = int(event.ind[0])
+                x, y = event.xdata, event.ydata
+                hover_text.set_position((x, y))
+                hover_text.set_text(f"{price_data['price'][ind]:.1f}€")
+                hover_text.set_visible(True)
+                markt_fig.canvas.draw_idle()
+            else:
+                hover_text.set_visible(False)
+                markt_fig.canvas.draw_idle()
+
+
         markt_ax.xaxis.set_major_locator(MaxNLocator(3))
-        markt_ax.text(['Heute'], current_price, f"{current_price:.1f}€", color='#FF9417', verticalalignment='bottom', horizontalalignment='right', fontsize=11)
-        markt_ax.text(['Gestern'], yesterday_price, f"{yesterday_price:.1f}€", color='#FF9417', verticalalignment='bottom', horizontalalignment='right', fontsize=11)
+        markt_ax.text(transform=markt_fig.transFigure,x=range(len(price_data['price']))[-1], y=current_price, s=f"{current_price:.1f}€", color='#FF9417', verticalalignment='bottom', horizontalalignment='right', fontsize=11)
+        #markt_ax.text(['Gestern'], yesterday_price, f"{yesterday_price:.1f}€", color='#FF9417', verticalalignment='bottom', horizontalalignment='right', fontsize=11)
         markt_ax.spines['top'].set_visible(False)
         markt_ax.spines['right'].set_visible(False)
         markt_ax.spines['left'].set_color('white')
         markt_ax.spines['bottom'].set_color('white')
         markt_ax.set_facecolor("#3F3F3F")
         markt_ax.tick_params(labelsize=9, colors='#FFFFFF')
-        markt_ax.plot(['','Gestern','Heute'], [yesterday_price,yesterday_price, current_price], color='#FF9417', marker='.')
+        markt_ax.plot(range(len(price_data['price'])), price_data['price'], color='#FF9417')
         #markt_ax.fill_between([0,1], [yesterday_price, current_price], color='#FF9417', alpha=0.2)
+        markt_fig.canvas.mpl_connect("motion_notify_event", on_hover)
         markt_canvas = FigureCanvasTkAgg(figure=markt_fig, master=root)
         markt_canvas.draw()
         markt_canvas.get_tk_widget().place(x=767, y=406)

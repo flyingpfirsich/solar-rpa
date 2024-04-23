@@ -39,6 +39,6 @@ class Solarpark:
 solarpark_neuenhagen = Solarpark(
     max_leistung_kw=1000,
     speicher_kapazität_kwh=1000,
-    standort_koordinaten=(51.178882, -1.826215),  # Koordinaten von Stonehenge
+    standort_koordinaten=(51.178882, -1.826215),
     bankroll=0  # Startkapital in Euro
 )

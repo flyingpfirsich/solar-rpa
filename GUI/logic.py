@@ -23,7 +23,7 @@ def get_weather_data(solarpark):
     url = f"https://api.brightsky.dev/weather?lat={lat}&lon={lon}&date={date}"
 
     try:
-        # API-Aufruf durchführen
+        # API-Aufruf durchführen3
         response = requests.get(url)
         response.raise_for_status()  # Überprüft, ob die Anfrage erfolgreich war
 
@@ -81,6 +81,13 @@ def get_solar_production(weather_data, solarpark):
 
     # Solarstrahlung aus den Wetterdaten abrufen, die als kWh/m² angegeben wird
     solar_irradiance = weather_data["weather"][-1]["solar"]  # Solarstrahlung in kWh/m²
+    cloud_cover = weather_data["weather"][-1]["cloud_cover"]
+    sun_intensity = 100 - cloud_cover
+    if int(sun_intensity) <= 50:
+        emoji = "⛅️"
+    else:
+        emoji = "☀️"
+
 
     # Gesamte auf die Module eingestrahlte Energie berechnen
     total_solar_input_kwh = solar_irradiance * total_module_area  # in kWh
@@ -89,7 +96,7 @@ def get_solar_production(weather_data, solarpark):
     energy_produced_kwh = total_solar_input_kwh * solarpark['Modulwirkungsgrad']
     energy_5s = (energy_produced_kwh / 3600) * 5
 
-    return energy_5s
+    return energy_5s, sun_intensity, emoji
 
 
 def price_decision(price_data, solarpark):
@@ -165,48 +172,9 @@ def trade(price_data, solarpark, sell_all=False):
         return "No action taken, hold position."
 
 
-'''while True:
-    price_data = get_price_data(solarpark)
-    weather_data = get_weather_data(solarpark)
-    solar_production = get_solar_production()
-    solarpark['gespeicherte_energie_kwh'] += solar_production
-    decision = price_decision(price_data, solarpark)
-    trade_result = trade(price_data, solarpark)
-
-    # Erstellen eines JSON-Objekts mit den gewünschten Daten
-    current_datetime = datetime.datetime.now(pytz.timezone("Europe/Berlin"))
-    current_temperature = weather_data["weather"][-1]['temperature'] if 'weather' in weather_data else 'N/A'
-    storage_fill_percentage = (solarpark['gespeicherte_energie_kwh'] / solarpark['speicher_kapazität_kwh']) * 100
-    power_efficiency = (solar_production / solarpark['max_leistung_kw']) if solarpark['max_leistung_kw'] > 0 else 0
-
-    data_to_print = {
-        "Name des Solarparks": solarpark["name"],
-        "Aktuelle Bankroll": solarpark["bankroll"],
-        "Heutiger Tag": current_datetime.strftime('%Y-%m-%d'),
-        "Aktuelle Uhrzeit": current_datetime.strftime('%H:%M:%S'),
-        "Aktuelle Temperatur": current_temperature,
-        "Stromdaten des letzten Tages": price_data['price'][-1] if 'price' in price_data else 'N/A',
-        "Fülle des Speichers": {
-            "Gespeicherte Energiemenge (kWh)": solarpark['gespeicherte_energie_kwh'],
-            "Gesamtspeicher (kWh)": solarpark['speicher_kapazität_kwh'],
-            "Prozentsatz": storage_fill_percentage
-        },
-        "Aktuelle Leistung des Solarparks (kW)": solar_production,
-        "Effektivität des Solarparks (%)": power_efficiency * 100
-    }
-
-    # Ausgabe der gesammelten Daten
-    print(json.dumps(data_to_print, indent=4))
-
-    time.sleep(5)  # Pause, um die Schleife alle 5 Sekunden zu wiederholen'''
 def update_data_list(data_list, new_value):
     data_list.append(new_value)
     if len(data_list) > 20:
         data_list.pop(0)  # Entfernt den ältesten Wert
     return data_list
 
-from matplotlib.ticker import FuncFormatter
-import matplotlib.dates as mdates
-def custom_round(x, pos):
-    """Rundet die Zahl x auf 2 Dezimalstellen."""
-    return f"{x:.2f}"
