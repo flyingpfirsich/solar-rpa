@@ -2,28 +2,17 @@ import customtkinter as ctk
 from tkinter import font
 from PIL import Image, ImageTk
 import threading
-import logic
 import time
 import pytz
 import datetime
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import MaxNLocator
+import random
 
-solarpark = {
-        "name": "Solarpark Neuenhagen",
-        "speicher_kapazität_kwh": 22000,
-        "standort_koordinaten": (51.178882, -1.826215),
-        "gespeicherte_energie_kwh": 0,
-        "bankroll": 0,
-        "Modulenennleistung_kW": 0.32,
-        "Modulgröße_m2": 1.7,
-        "Modulanzahl": 23500,
-        "Modulwirkungsgrad": 0.22,
-        "max_leistung_kw": 0.32 * 23500, 
-        "status":False,
-        "vertrieb":False
-    }
+# internal
+from solarpark import solarpark_neuenhagen as solarpark
+import logic
 
 # Initialisieren des Hauptfensters
 ctk.set_appearance_mode("Dark")  # Alternativ "Dark" oder "Light"
@@ -228,7 +217,7 @@ def update_dashboard():
         "last_day_power": [],
         "storage": {
             "stored_energy": [],
-            "total_storage": 1000,
+            "total_storage": solarpark["speicher_kapazität_kwh"],
             "percentage": []
         },
         "current_power": [],
@@ -247,6 +236,10 @@ def update_dashboard():
             solar_production = 0
 
         _, cloud_cover, emoji = logic.get_solar_production(weather_data, solarpark)
+
+        # Variation for Showcase
+        variation = random.uniform(-0.1, 0.1)
+        solar_production = solar_production  * (1 + variation)
 
         
           # Include solarpark here
@@ -276,7 +269,7 @@ def update_dashboard():
         app_data["storage"]["stored_energy"] = logic.update_data_list(app_data["storage"]["stored_energy"], solarpark['gespeicherte_energie_kwh'])
         app_data["storage"]["percentage"] = logic.update_data_list(app_data["storage"]["percentage"], (solarpark['gespeicherte_energie_kwh'] / app_data["storage"]["total_storage"]) * 100)
         app_data["current_power"] = logic.update_data_list(app_data["current_power"], solar_production*100)
-        app_data["efficiency"] = logic.update_data_list(app_data["efficiency"], (solar_production / solarpark['max_leistung_kw']) * 10000 if solarpark['max_leistung_kw'] > 0 else 0)
+        app_data["efficiency"] = logic.update_data_list(app_data["efficiency"], weather_data["weather"][-1]["solar"] * 100 * (1 + variation) if solarpark['max_leistung_kw'] > 0 else 0)
                 
         #GUI Update
         vdatum_label.configure(text=str(app_data['date']))
@@ -314,7 +307,7 @@ def update_dashboard():
         prod_fig = Figure(figsize=(4.3, 2.6), facecolor="#3F3F3F")
         prod_fig.text(x=0.08,y=0.95, s="KW", color='#FFFFFF', fontsize=14,transform=prod_fig.transFigure, ha='center', va='center')
         prod_ax = prod_fig.add_subplot()
-        prod_ax.set_ylim(0,(0.32 * 23500))
+        #prod_ax.set_ylim(0,(0.32 * 23500))
         prod_ax.xaxis.set_major_locator(MaxNLocator(4))
         prod_ax.text(app_data['time'][-1], app_data['current_power'][-1], f"{app_data['current_power'][-1]:.1f}KW", color='#FF9417', verticalalignment='bottom', horizontalalignment='right', fontsize=11)
         prod_ax.spines['top'].set_visible(False)
@@ -346,9 +339,6 @@ def update_dashboard():
         eff_canvas = FigureCanvasTkAgg(figure=eff_fig, master=root)
         eff_canvas.draw()
         eff_canvas.get_tk_widget().place(x=493, y=246)
-
-
-        
 
 
         #MARKT
@@ -411,7 +401,6 @@ def halten():
     solarpark['vertrieb'] = False
     vvertrieb_label.configure(text=f"inaktiv")
     markt_button.configure(text='VERKAUFEN')
-
 
 
 markt_button = ctk.CTkButton(master=root, width=164, height=55, corner_radius=10, text="VERKAUFEN", font=("Inter", 16, "bold"), command=market, hover_color='#ba7b32')
